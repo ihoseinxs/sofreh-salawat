@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
-import { useQuery } from 'react-query';
-import { userAPI } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { 
   User,
@@ -13,7 +11,6 @@ import {
   Users,
   Award,
   Edit,
-  Save,
   X,
   Heart,
   TrendingUp,
@@ -27,27 +24,40 @@ interface ProfileFormData {
   phone?: string;
 }
 
+// Mock data for production
+const mockStats = {
+  totalPrayers: 75,
+  totalParticipations: 2,
+  completedPrayers: 1
+};
+
+const mockParticipations = [
+  {
+    id: 'part-1',
+    userId: 'user-1',
+    prayerId: 'prayer-1',
+    count: 50,
+    date: '2024-01-15T00:00:00.000Z',
+    createdAt: '2024-01-15T00:00:00.000Z',
+    prayer: {
+      id: 'prayer-1',
+      title: 'ختم صلوات برای سلامتی امام زمان',
+      intention: 'سلامتی و تعجیل فرج امام زمان (عج)',
+      targetCount: 1000,
+      currentCount: 450,
+      status: 'ACTIVE'
+    }
+  }
+];
+
 const Profile = () => {
   const { user, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Fetch user stats
-  const { data: statsData, isLoading: statsLoading } = useQuery(
-    ['user-stats'],
-    () => userAPI.getUserStats(),
-    { enabled: !!user }
-  );
-
-  // Fetch user participations
-  const { data: participationsData, isLoading: participationsLoading } = useQuery(
-    ['user-participations'],
-    () => userAPI.getUserParticipations(),
-    { enabled: !!user }
-  );
-
-  const stats = statsData?.data?.stats;
-  const participations = participationsData?.data?.participations || [];
+  // Use mock data for production
+  const stats = import.meta.env.PROD ? mockStats : null;
+  const participations = import.meta.env.PROD ? mockParticipations : [];
 
   const {
     register,
@@ -237,12 +247,7 @@ const Profile = () => {
           {/* Recent Participations */}
           <div className="card">
             <h2 className="text-xl font-semibold mb-6">مشارکت‌های اخیر</h2>
-            {participationsLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">در حال بارگذاری...</p>
-              </div>
-            ) : participations.length === 0 ? (
+            {participations.length === 0 ? (
               <div className="text-center py-8">
                 <Heart className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600">هنوز در هیچ ختمی مشارکت نکرده‌اید</p>
@@ -275,12 +280,7 @@ const Profile = () => {
           {/* User Stats */}
           <div className="card">
             <h2 className="text-xl font-semibold mb-6">آمار فعالیت</h2>
-            {statsLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">در حال بارگذاری...</p>
-              </div>
-            ) : (
+            {stats ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2 space-x-reverse">
@@ -303,6 +303,11 @@ const Profile = () => {
                   </div>
                   <span className="font-bold text-lg">{stats?.completedPrayers || 0}</span>
                 </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">در حال بارگذاری...</p>
               </div>
             )}
           </div>
