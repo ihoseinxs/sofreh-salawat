@@ -1,20 +1,14 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useQuery } from 'react-query';
 import { contentAPI } from '../services/api';
+import { ReligiousContent } from '../types';
 import { 
-  BookOpen,
-  Heart,
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  Download,
-  Share2,
-  Filter,
+  BookOpen, 
+  Play, 
+  Download, 
   Search,
-  Calendar,
-  User
+  Heart,
+  Calendar
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -35,16 +29,30 @@ const Content = () => {
   const [selectedType, setSelectedType] = useState<ContentType | 'ALL'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
-  const [audioVolume, setAudioVolume] = useState(0.7);
+  const [content, setContent] = useState<ReligiousContent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Fetch religious content
-  const { data: contentData, isLoading, error } = useQuery(
-    ['religious-content', selectedType],
-    () => contentAPI.getReligiousContent({ type: selectedType === 'ALL' ? undefined : selectedType }),
-    { enabled: true }
-  );
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        setIsLoading(true);
+        const response = await contentAPI.getReligiousContent({ 
+          type: selectedType === 'ALL' ? undefined : selectedType 
+        });
+        if (response.success && response.data) {
+          setContent(response.data.content);
+        }
+      } catch (error) {
+        console.error('Error fetching content:', error);
+        toast.error('خطا در بارگذاری محتوا');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const content = contentData?.data?.content || [];
+    fetchContent();
+  }, [selectedType]);
 
   // Filter content based on search term
   const filteredContent = content.filter((item: ContentItem) =>
@@ -69,23 +77,20 @@ const Content = () => {
     }
   };
 
-  const handleAudioPlay = (audioUrl: string, itemId: string) => {
+  const handleAudioPlay = (itemId: string) => {
     if (playingAudio === itemId) {
       setPlayingAudio(null);
     } else {
       setPlayingAudio(itemId);
-      // Here you would implement actual audio playback
       toast.success('پخش صوتی شروع شد');
     }
   };
 
-  const handleDownload = (item: ContentItem) => {
-    // Here you would implement actual download functionality
+  const handleDownload = () => {
     toast.success('دانلود شروع شد');
   };
 
   const handleShare = (item: ContentItem) => {
-    // Here you would implement actual share functionality
     if (navigator.share) {
       navigator.share({
         title: item.title,
@@ -106,28 +111,9 @@ const Content = () => {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">در حال بارگذاری محتوا...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="text-center">
-          <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold mb-2">خطا در بارگذاری</h3>
-          <p className="text-gray-600 mb-6">
-            خطا در بارگذاری محتوای مذهبی
-          </p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="btn-primary"
-          >
-            تلاش مجدد
-          </button>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+          <h3 className="text-xl font-semibold mb-2">در حال بارگذاری...</h3>
+          <p className="text-gray-600">لطفاً صبر کنید</p>
         </div>
       </div>
     );
@@ -210,119 +196,76 @@ const Content = () => {
                       {typeInfo.label}
                     </span>
                   </div>
-                  <div className="flex space-x-1 space-x-reverse">
+                  
+                  <div className="flex items-center space-x-1 space-x-reverse">
                     {item.audioUrl && (
                       <button
-                        onClick={() => handleAudioPlay(item.audioUrl!, item.id)}
+                        onClick={() => handleAudioPlay(item.id)}
                         className="p-1 text-gray-400 hover:text-primary-600 transition-colors"
                         title={playingAudio === item.id ? 'توقف' : 'پخش'}
                       >
-                        {playingAudio === item.id ? (
-                          <Pause className="w-4 h-4" />
-                        ) : (
-                          <Play className="w-4 h-4" />
-                        )}
+                        <Play className="w-4 h-4" />
                       </button>
                     )}
+                    
                     <button
                       onClick={() => handleShare(item)}
                       className="p-1 text-gray-400 hover:text-primary-600 transition-colors"
                       title="اشتراک‌گذاری"
                     >
-                      <Share2 className="w-4 h-4" />
+                      <Download className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
-
-                {/* Title */}
-                <h3 className="text-lg font-semibold mb-3 group-hover:text-primary-600 transition-colors">
-                  {item.title}
-                </h3>
 
                 {/* Content */}
                 <div className="mb-4">
-                  <p className="text-gray-700 leading-relaxed line-clamp-4">
-                    {item.content}
+                  <h3 className="text-lg font-semibold mb-2 group-hover:text-primary-600 transition-colors">
+                    {item.title}
+                  </h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    {item.content.length > 150 
+                      ? item.content.substring(0, 150) + '...'
+                      : item.content
+                    }
                   </p>
                 </div>
 
-                {/* Meta Info */}
-                <div className="space-y-2 text-sm text-gray-500">
-                  {item.author && (
-                    <div className="flex items-center space-x-2 space-x-reverse">
-                      <User className="w-4 h-4" />
-                      <span>{item.author}</span>
-                    </div>
-                  )}
-                  {item.source && (
-                    <div className="flex items-center space-x-2 space-x-reverse">
-                      <BookOpen className="w-4 h-4" />
-                      <span>{item.source}</span>
-                    </div>
-                  )}
+                {/* Footer */}
+                <div className="flex items-center justify-between text-xs text-gray-500">
                   <div className="flex items-center space-x-2 space-x-reverse">
-                    <Calendar className="w-4 h-4" />
+                    <Calendar className="w-3 h-3" />
                     <span>{formatDate(item.createdAt)}</span>
                   </div>
+                  
+                  {item.author && (
+                    <span className="text-xs text-gray-500">
+                      {item.author}
+                    </span>
+                  )}
                 </div>
 
                 {/* Actions */}
-                <div className="flex space-x-2 space-x-reverse mt-4 pt-4 border-t border-gray-100">
-                  {item.audioUrl && (
-                    <button
-                      onClick={() => handleDownload(item)}
-                      className="btn-outline flex-1 flex items-center justify-center space-x-2 space-x-reverse text-sm"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>دانلود</span>
-                    </button>
-                  )}
+                <div className="mt-4 flex space-x-2 space-x-reverse">
+                  <button
+                    onClick={() => handleDownload()}
+                    className="btn-outline flex-1 flex items-center justify-center space-x-2 space-x-reverse text-sm"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>دانلود</span>
+                  </button>
+                  
                   <button
                     onClick={() => handleShare(item)}
                     className="btn-outline flex-1 flex items-center justify-center space-x-2 space-x-reverse text-sm"
                   >
-                    <Share2 className="w-4 h-4" />
+                    <Download className="w-4 h-4" />
                     <span>اشتراک</span>
                   </button>
                 </div>
               </motion.div>
             );
           })}
-        </div>
-      )}
-
-      {/* Audio Controls (if any audio is playing) */}
-      {playingAudio && (
-        <div className="fixed bottom-4 left-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4 space-x-reverse">
-              <button
-                onClick={() => setPlayingAudio(null)}
-                className="p-2 bg-primary-100 rounded-full text-primary-600 hover:bg-primary-200 transition-colors"
-              >
-                <Pause className="w-5 h-5" />
-              </button>
-              <div>
-                <div className="font-medium">در حال پخش صوتی</div>
-                <div className="text-sm text-gray-500">صلوات شریف</div>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4 space-x-reverse">
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <VolumeX className="w-4 h-4 text-gray-400" />
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value={audioVolume}
-                  onChange={(e) => setAudioVolume(parseFloat(e.target.value))}
-                  className="w-20"
-                />
-                <Volume2 className="w-4 h-4 text-gray-400" />
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>

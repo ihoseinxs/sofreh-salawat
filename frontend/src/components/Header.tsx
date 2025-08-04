@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
@@ -7,12 +7,10 @@ import {
   X, 
   User, 
   LogOut, 
-  Settings,
-  Heart,
-  BookOpen,
-  Users,
-  Home,
   Plus,
+  BookOpen,
+  Home,
+  Heart,
   Sparkles
 } from 'lucide-react';
 

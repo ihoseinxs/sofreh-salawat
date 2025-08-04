@@ -7,7 +7,6 @@ import {
   Users, 
   Target, 
   BookOpen, 
-  Play, 
   ArrowRight, 
   Star,
   Sparkles,
