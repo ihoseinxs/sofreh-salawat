@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { prayerAPI } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import PrayerCounter from '../components/PrayerCounter';
+import SharePrayer from '../components/SharePrayer';
 import { 
   ArrowLeft,
   Heart,
@@ -183,12 +184,13 @@ const PrayerDetail = () => {
           >
             <Copy className="w-5 h-5" />
           </button>
-          <button
-            className="p-2 text-gray-400 hover:text-primary-600 transition-colors"
-            title="اشتراک‌گذاری"
-          >
-            <Share2 className="w-5 h-5" />
-          </button>
+          <SharePrayer
+            prayerId={prayer.id}
+            prayerTitle={prayer.title}
+            prayerIntention={prayer.intention}
+            currentCount={prayer.currentCount}
+            targetCount={prayer.targetCount}
+          />
         </div>
       </div>
 
