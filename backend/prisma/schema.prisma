@@ -1,0 +1,136 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// مدل کاربر
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  phone     String?
+  avatar    String?
+  isActive  Boolean  @default(true)
+  role      String   @default("USER") // USER, ADMIN, MODERATOR
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // روابط
+  prayers        Prayer[]
+  participations Participation[]
+  notifications  Notification[]
+  userStats      UserStats?
+
+  @@map("users")
+}
+
+// مدل ختم صلوات
+model Prayer {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  intention   String   // نیت ختم
+  targetCount Int      // تعداد هدف صلوات
+  currentCount Int     @default(0) // تعداد فعلی
+  startDate   DateTime
+  endDate     DateTime?
+  status      String   @default("ACTIVE") // ACTIVE, COMPLETED, PAUSED, CANCELLED
+  isPublic    Boolean  @default(true)
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // روابط
+  creator       User            @relation(fields: [createdBy], references: [id])
+  participations Participation[]
+  prayerStats   PrayerStats?
+
+  @@map("prayers")
+}
+
+// مدل مشارکت کاربران
+model Participation {
+  id        String   @id @default(cuid())
+  userId    String
+  prayerId  String
+  count     Int      // تعداد صلوات خوانده شده
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  // روابط
+  user   User   @relation(fields: [userId], references: [id])
+  prayer Prayer @relation(fields: [prayerId], references: [id])
+
+  @@unique([userId, prayerId, date])
+  @@map("participations")
+}
+
+// آمار کاربر
+model UserStats {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  totalPrayers      Int      @default(0) // کل صلوات خوانده شده
+  totalParticipations Int    @default(0) // تعداد مشارکت‌ها
+  completedPrayers  Int      @default(0) // ختم‌های تکمیل شده
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // روابط
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_stats")
+}
+
+// آمار ختم
+model PrayerStats {
+  id                String @id @default(cuid())
+  prayerId          String @unique
+  totalParticipants Int    @default(0)
+  averageDailyCount Int    @default(0)
+  completionRate    Float  @default(0) // درصد تکمیل
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // روابط
+  prayer Prayer @relation(fields: [prayerId], references: [id])
+
+  @@map("prayer_stats")
+}
+
+// نوتیفیکیشن‌ها
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   // PRAYER_REMINDER, PARTICIPATION_UPDATE, PRAYER_COMPLETED, SYSTEM
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // روابط
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+// محتوای مذهبی
+model ReligiousContent {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  type        String   // DUA, HADITH, SALAWAT_TEXT, SALAWAT_AUDIO, ETIQUETTE
+  audioUrl    String?
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("religious_content")
+} 
