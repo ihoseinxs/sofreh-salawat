@@ -240,7 +240,7 @@ export const participateInPrayer = async (req: Request, res: Response, next: Nex
         userId_prayerId_date: {
           userId,
           prayerId: id,
-          date: new Date().toISOString().split('T')[0]
+          date: new Date().toISOString().split('T')[0] // Format: YYYY-MM-DD
         }
       },
       update: {
@@ -251,7 +251,8 @@ export const participateInPrayer = async (req: Request, res: Response, next: Nex
       create: {
         userId,
         prayerId: id,
-        count
+        count,
+        date: new Date().toISOString().split('T')[0] // Format: YYYY-MM-DD
       }
     });
 

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { prayerAPI } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
+import PrayerCounter from '../components/PrayerCounter';
 import { 
   ArrowLeft,
   Heart,
@@ -253,34 +254,23 @@ const PrayerDetail = () => {
           {/* Participation */}
           {prayer.status === 'ACTIVE' && (
             <div className="card">
-              <h2 className="text-xl font-semibold mb-4">مشارکت در ختم</h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-center space-x-4 space-x-reverse">
-                  <button
-                    onClick={() => setParticipationCount(Math.max(1, participationCount - 1))}
-                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-primary-600">{participationCount}</div>
-                    <div className="text-sm text-gray-500">صلوات</div>
-                  </div>
-                  <button
-                    onClick={() => setParticipationCount(participationCount + 1)}
-                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-                <button
-                  onClick={handleParticipate}
-                  disabled={participateMutation.isLoading}
-                  className="btn-primary w-full py-3 text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {participateMutation.isLoading ? 'در حال ثبت...' : 'ثبت مشارکت'}
-                </button>
-              </div>
+              <h2 className="text-xl font-semibold mb-4">شمارشگر صلوات</h2>
+              <PrayerCounter
+                prayerId={prayer.id}
+                onCountChange={async (count) => {
+                  if (count > 0) {
+                    try {
+                      await prayerAPI.participateInPrayer(prayer.id, { count });
+                      toast.success(`${count} صلوات ثبت شد`);
+                      queryClient.invalidateQueries(['prayer', id]);
+                      queryClient.invalidateQueries(['prayer-stats', id]);
+                    } catch (error) {
+                      toast.error('خطا در ثبت صلوات');
+                    }
+                  }
+                }}
+                isActive={prayer.status === 'ACTIVE'}
+              />
             </div>
           )}
         </div>

@@ -1,21 +1,58 @@
-import React from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useQuery } from 'react-query';
+import { prayerAPI } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
+import PersianCalendar from '../components/PersianCalendar';
 import { 
-  Heart, 
-  Users, 
-  Target, 
-  BookOpen, 
-  ArrowRight, 
-  Star,
-  Sparkles,
+  Heart,
+  Users,
+  Target,
   Calendar,
-  TrendingUp
+  Play,
+  ArrowLeft,
+  ArrowRight,
+  Star,
+  Clock,
+  TrendingUp,
+  BookOpen,
+  Sparkles
 } from 'lucide-react';
 
 const Home = () => {
   const { user } = useAuth();
+
+  // Fetch active prayers
+  const { data: prayersData } = useQuery(
+    ['prayers'],
+    () => prayerAPI.getPrayers({ status: 'ACTIVE' }),
+    { enabled: true }
+  );
+
+  const activePrayers = prayersData?.data?.prayers || [];
+
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5
+      }
+    }
+  };
 
   const features = [
     {
@@ -54,28 +91,6 @@ const Home = () => {
     { number: '50K+', label: 'صلوات خوانده شده', icon: Target },
     { number: '100+', label: 'محتوای مذهبی', icon: BookOpen }
   ];
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        ease: "easeOut"
-      }
-    }
-  };
 
   return (
     <div className="space-y-16">
@@ -313,6 +328,57 @@ const Home = () => {
           </motion.div>
         </motion.div>
       </section>
+
+      {/* Sidebar */}
+      <div className="lg:col-span-1 space-y-6">
+        {/* Calendar */}
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={itemVariants}
+        >
+          <PersianCalendar />
+        </motion.div>
+
+        {/* Quick Stats */}
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={itemVariants}
+          className="card"
+        >
+          <h3 className="text-lg font-semibold mb-4">آمار سریع</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <Heart className="w-5 h-5 text-red-500" />
+                <span className="text-gray-600">ختم‌های فعال</span>
+              </div>
+              <span className="font-bold text-lg">{activePrayers?.length || 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <Users className="w-5 h-5 text-blue-500" />
+                <span className="text-gray-600">مشارکت‌کنندگان</span>
+              </div>
+              <span className="font-bold text-lg">
+                {activePrayers?.reduce((total, prayer) => total + (prayer.prayerStats?.totalParticipants || 0), 0) || 0}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <Target className="w-5 h-5 text-green-500" />
+                <span className="text-gray-600">کل صلوات</span>
+              </div>
+              <span className="font-bold text-lg">
+                {activePrayers?.reduce((total, prayer) => total + prayer.currentCount, 0) || 0}
+              </span>
+            </div>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 };
